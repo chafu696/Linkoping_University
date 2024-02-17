@@ -1,0 +1,197 @@
+---
+title: "Comparison on spam email classification with different methods"
+subtitle: "732A92 Text Mining"
+author: "Chao Fu(chafu696)"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: pdf_document
+csl: chaofu_format.csl
+bibliography: fu_chao.bib
+abstract: "Imbalanced data can have a significant influence on learning system. There are two methods in transforming imbalanced data into a balanced one, oversampling and undersampling. To process text using machine learning or Neural Network models, text data need to be encoded into vectors of numerical values. There are two typical methods for text processing, Term frequency–inverse document frequency(tf-idf) and word embedding. In this project, four cutting-edge models are applied which are Logistic Regression, Support Vector Machine, Random Forest and TextRNN(LSTM) to explore an optimal combination of methods and models for spam email classification. The results reveal that undersampling data transformed from imbalanced data has the highest accuracy. Based on undersampling data, Support Vector Machine with tf-idf and TextRNN(LSTM) with word embedding both have the highest classification accuracy reaching 96%. According to the model complexity, the optimal spam email classification model is Support Vector Machine with tf-idf."
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, results = "markup")
+```
+
+```{r, include = FALSE, message = FALSE, warning = FALSE}
+rm(list=ls())
+library(tidyverse)
+library(ggplot2)
+library(fmsb)
+library(gridExtra)
+```
+
+# 1 Introduction
+
+Remote working is prevalent during the epidemic recently. Hence, there is a significant increase in the use of email. In this situation, spam email has attracted considerable attention. Generally, the number of spam emails is significantly less than non-spam email's which can lead to a problem of imbalanced data. There are two methods in transforming imbalanced data into a balanced one, oversampling and undersampling. To process text using machine learning or Neural Network models, text data need to be encoded into vectors of numerical values. There are two typical methods for text processing, Term frequency–inverse document frequency(tf-idf) and word embedding. Overall, an optimal combination of methods and models for spam email classification is facing challenges and it is worthwhile devoting much effort to this. This project aims to compare the discrepancies among the different methods in spam email classification and find an optimal combination. With this motive, two extra data, oversampling and undersampling, are created from the original one. Then tf-idf and word embedding matrix are determined for each data. In this project, four cutting-edge models are applied which are Logistic Regression, Support Vector Machine, Random Forest and TextRNN(LSTM). Finally, the classification accuracy on the test data is measured with these models based on different tf-idf and word embedding matrix.
+
+# 2 Background
+
+### 2.1 Theory
+
+**1) Oversampling and Undersampling** 
+
+The performance obtained by the existing learning system can be affected by imbalanced labels in training data which means that the number of one label tremendously exceeds the other one. In this case, the learning system is facing challenges to learn the information behind the minority label. There are two non-heuristic methods to obtain balanced data by random selection from minority label's examples with replacement(oversampling) and from majority label's examples without replacement(undersampling)[@batista2004study].
+
+Without losing any information from original data is the main merit of the oversampling method. However, it has many drawbacks such as extensive time consumption, serious overfitting risk, misleading information behind minority label. Although the undersampling method can save running time, it can lose some important information in the majority label.[@kaur2018comparing]
+
+**2) Logistic Regression**
+
+The conventional logistic regression equation is as follows:
+
+$$P(Y_i) = \frac{e^{\beta_0 + \beta_1X_1 + \beta_2X_2 + \dots \beta_pX_p}}{1 + e^{\beta_0 + \beta_1X_1 + \beta_2X_2 + \dots \beta_pX_p}}$$
+
+Using logit to transform the basic logistic regression into a form of multiple linear regression is given below:
+
+$$logit(\hat{Y})=ln(p / 1 - p)= \beta_0 + \beta_1X_1 + \beta_2X_2 + \dots \beta_pX_p = \beta^TX$$
+
+The interpretation of this equation is given below:
+
+1) $p = P(Y_i)$ is the estimated probability of each response variable value occurring.
+
+2) $\beta_0$ is the intercept which is regarded as a constant value. $X_1, X_2, \dots X_p$ are p number of explanatory variables. $\beta_1, \beta_2, \dots \beta_p$ are their regression coefficients. $\beta$ is a regression coefficient matrix$((p + 1) \times 1)$ and $X$ is a sample matrix$((p + 1) \times N)$ in which N is the number of observations.
+
+**3) Support Vector Machine**
+
+For binary classification, Support Vector Machine(SVM) is implemented by maximizing the margin to minimize the maximum loss[@boser1992training].
+
+The hard SVM equation is given below[@deisenroth2020mathematics]:
+
+$$\begin{aligned}
+&\mathop{min}_{w,b} \frac{1}{2}\Vert w\Vert^2\\
+&subject \; to \;y_n(w^TX + b) \ge 1 \; for \; all 
+\;n = 1, 2, \dots, N\\
+\end{aligned}$$
+
+The interpretation of this equation is given below:
+
+1) $b$ is the intercept which is regarded as a constant value.  $w$ is a vector $(p\times 1)$ normal to the hyperplane and $X$ is a sample matrix$(p \times N)$ in which N is the number of observations.
+
+**4) Random Forest**
+
+"Random forests are a combination of tree predictors such that each tree depends on the values of a random vector sampled independently and with the same distribution for all trees in the forest."[@breiman2001random]
+
+**5) Long Short-Term Memory (LSTM)**
+
+Hochreiter and Schmidhuber developed an innovative method called "Long Short-Term Memory"(LSTM) which can fix the limitation of recurrent neural network(RNN)[@hochreiter1997long]. Hence, the LSTM method is prevalent in text classification based on the context.
+
+**6) TextRNN(LSTM)**
+
+TextRNN is used for text classification with LSTM, which means bi-directional LSTM[@cai2018deeplearning].  
+
+### 2.2 Method
+
+**1) Creating four data**
+
+The original data is imbalanced, in which the samples of Non-Spam heavily outnumber Spam. Random selection of the same number of Spam from Non-Spam samples without replacement to obtain undersampling data(balanced data). Then, the random selection of the same number of Non-Spam from Spam samples with replacement to obtain oversampling data(balanced data). With additional test data, four data are obtained, original(imbalanced data), oversampling(balanced data),  undersampling(balanced data)finally and test data.
+
+**2) Creating pre-trained word embedding weights matrix**
+
+The number of all three data is not sufficient to train the word embedding weights in TextRNN(LSTM) learning system. Hence, the pre-trained word embedding weights matrix is applied in its word embedding layer.  The original, oversampling and undersampling data generate pre-trained word embedding weights matrix respectively based on the spacy module. 
+
+**3) Finding the best hyper-parameters**
+
+For both word embedding and tf-idf method, the original data is applied to find the best hyper-parameters in Logistic Regression, Support Vector Machine and Random Forest model. Then, the best parameters are fixed in each of the three models. 
+
+The pre-trained word embedding weights matrix is only used in TextRNN(LSTM). 70% of original data is used as training data, the rest is for validation data. Then, they are used to find the best epoch number based on the pre-trained word embedding weights matrix of original data. This process is also applied in oversampling and undersampling data.  
+
+
+**4) Training models with best hyper-parameters and obtaining the accuracy on test data**
+
+After the first 3 steps, 7 learning systems are obtained with the best hyper-parameters respectively. Then, these systems are trained by original, oversampling and undersampling data respectively. The accuracy of these trained systems based on test data which is unseen in the training process is measured.
+
+# 3 Numerical example
+
+This data[@kaggle_data] was obtained from Kaggle.
+
+The train and test data both have 2 variables : 
+
+One is the response variable, a binary variable with two classes: "Spam" and "Non-Spam". The other is the explanatory variable with the email message.
+
+Both train and test data don't contain missing data. However, the training data is imbalanced, "Spam" with 122, "Non-Spam" with 835. 
+
+With the aim of this project, two other balanced data are created from the original data, one is undersampling and the other is oversampling.
+
+# 4 Results
+
+**Table 1: The accuracy of tf-idf**
+
+|Method|Original_tf-idf|Oversampling_tf-idf|Undersampling_tfidf|
+--- | --- | --- | --- |
+|Logistic Regression|79%|90%|95%|
+|Support Vector Machine|92%|90%|96%|
+|Random Forest|82%|82%|87%|
+
+Three models apply the tf-idf method. The values in the table are classification accuracy on the test data.
+
+**Table 2: The accuracy of word-embedding**
+
+|Method|original_word-embedding|oversampling_word-embedding|undersampling_word-embedding|
+--- | --- | --- | --- |
+|Logistic Regression|90%|92%|94%|
+|Support Vector Machine|87%|89%|91%|
+|Random Forest|82%|82%|94%|
+|TextRNN(LSTM)|92%|93%|96%|
+
+Four models apply the word embedding method. The values in the table are classification accuracy on the test data.
+
+**Figure 1: Comparison on each model in three data**
+
+```{r, echo = FALSE}
+lr_acc <- tibble("name" = rep(c("Origin", "over", "under"), 2), "acc" = c(0.79, 0.9, 0.95, 0.9, 0.92, 0.94), "method" = rep(c("tf_idf", "word_em"), each = 3))
+p1 = ggplot(lr_acc, aes(x = name, y = acc, color = method, fill = method)) + geom_bar(stat = "identity", position = "dodge", width = 0.5) + 
+  labs(title = "Logistic Regression", x = "Sample catergory", y = "Accuracy") + 
+  ylim(0, 1) + theme(plot.title = element_text(hjust = 0.5))
+
+svm_acc <- tibble("name" = rep(c("Origin", "over", "under"), 2), "acc" = c(0.92, 0.9, 0.96, 0.87, 0.89, 0.91), "method" = rep(c("tf_idf", "word_em"), each = 3))
+p2 = ggplot(svm_acc, aes(x = name, y = acc, color = method, fill = method)) + geom_bar(stat = "identity", position = "dodge", width = 0.5) + 
+  labs(title = "Support Vector Machine", x = "Sample catergory", y = "Accuracy") + ylim(0, 1) + theme(plot.title = element_text(hjust = 0.5))
+
+rf_acc <- tibble("name" = rep(c("Origin", "over", "under"), 2), "acc" = c(0.82, 0.82, 0.87, 0.82, 0.82, 0.94), "method" = rep(c("tf_idf", "word_em"), each = 3))
+p3 = ggplot(rf_acc, aes(x = name, y = acc, color = method, fill = method)) + geom_bar(stat = "identity", position = "dodge", width = 0.5) + 
+  labs(title = "Random Forest", x = "Sample catergory", y = "Accuracy") + 
+  ylim(0, 1) + theme(plot.title = element_text(hjust = 0.5))
+
+lstm_acc <- tibble("name" = c("Origin", "over", "under"), "acc" = c(0.92, 0.93, 0.96), "method" = rep(c("word_em"), 3))
+p4 = ggplot(lstm_acc, aes(x = name, y = acc, color = method, fill = method)) + geom_bar(stat = "identity", position = "dodge", width = 0.5) + 
+  labs(title = "Text_RNN(LSTM)", x = "Sample catergory", y = "Accuracy") + 
+  ylim(0, 1) + theme(plot.title = element_text(hjust = 0.5))
+
+grid.arrange(p1, p2, p3, p4, ncol = 2, nrow = 2)
+```
+
+Each model has a graph to show the comparison on the tf-idf and word embedding methods in original, oversampling and undersampling data.
+
+**Figure 2: Comparison among models in three data**
+
+```{r, echo = FALSE}
+word_acc <- tibble("name" = rep(c("Origin", "over", "under"), 4), "acc" = c(0.9, 0.92, 0.94, 0.87, 0.89, 0.91, 0.82, 0.82, 0.94, 0.92, 0.93, 0.96), "method" = rep(c("Logistic Regression", "Support Vector Machine", "Random Forest", "TextRNN(LSTM)"), each = 3))
+p5 = ggplot(word_acc, aes(x = name, y = acc, color = method, fill = method)) + geom_bar(stat = "identity", position = "dodge", width = 0.5) + 
+  labs(title = "Word_embedding", x = "Sample catergory", y = "Accuracy") + 
+  ylim(0, 1) + theme(plot.title = element_text(hjust = 0.5))
+
+tf_acc <- tibble("name" = rep(c("Origin", "over", "under"), 3), "acc" = c(0.79, 0.90, 0.95, 0.92, 0.90, 0.96, 0.82, 0.82, 0.87), "method" = rep(c("Logistic Regression", "Support Vector Machine", "Random Forest"), each = 3))
+p6 = ggplot(tf_acc, aes(x = name, y = acc, color = method, fill = method)) + geom_bar(stat = "identity", position = "dodge", width = 0.5) + 
+  labs(title = "Tf_idf", x = "Sample catergory", y = "Accuracy") + 
+  ylim(0, 1) + theme(plot.title = element_text(hjust = 0.5))
+
+grid.arrange(p5, p6, ncol = 1, nrow = 2)
+```
+
+Each method has a graph to show the comparison on the four different models in original, oversampling and undersampling data.
+
+# 5 Discussion
+
+In this project, the imbalanced data processing is undersampling and oversampling. Undersampling data has the highest spam email classification accuracy among all the methods and models. The imbalanced data has the lowest one. Logistic Regression with tf-idf and Random Forest with word embedding are the most seriously influenced by imbalanced data. Support Vector Machine with tf-idf and TextRNN(LSTM) in word embedding methods respectively rank first in all three types of data compared with other models. The highest spam email classification accuracy is 96% in both Support Vector Machine with tf-idf and TextRNN(LSTM) with word embedding, although Support Vector Machine is simpler than TextRNN(LSTM).
+
+The best solution[@kaggle_solution] based on the same data is published in Kaggle. This solution removes some information from the imbalanced data based on the rules designed by the author. Although it applies Logistic Regression and Support Vector Machine models with the tf-idf method, a Neural Network learning system and Random Forest are not employed. Logistic Regression and Support Vector Machine in this solution has the highest spam email classification accuracy reaching 97% and 96% respectively which are almost the same as this project obtains.
+
+# 6 Conclusion
+
+To overcome the limitation of spam email classification, this project compares many different methods and models. The results reveal that undersampling data transformed from imbalanced data has the highest accuracy. Based on undersampling data, Support Vector Machine with tf-idf and TextRNN(LSTM) with word embedding both have the highest classification accuracy reaching 96%. According to the model complexity, the optimal spam email classification model is Support Vector Machine with tf-idf. 
+
+Although the best solution[@kaggle_solution] for this problem published in Kaggle has almost the same result, it uses imbalanced data and can be time-consuming for designing rules to remove some information. In addition, the learning systems in this solution are not sufficient, it doesn't explore the performance in neural networks and a Random Forest.
+
+This project does not pay attention to other cutting-edge models, such as TextCNN, bert which might have a better performance. More research could be done in the data preprocessing by both removing some information and undersampling instead of a single method. Another limitation of this project is that the data does not contain large text which is common in practice. Future research can be spent on solving these limitations. 
+
+# 7 References
