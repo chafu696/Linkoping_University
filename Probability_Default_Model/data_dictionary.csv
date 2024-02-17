@@ -1,0 +1,12 @@
+﻿Variable Name,Description,Type
+personal_credit_%,Total balance on credit cards and personal lines of credit except real estate and no installment debt like car loans divided by the sum of credit limits,percentage
+age,Age of borrower in years,integer
+A30-60_Counter,Number of times borrower has been 30-59 days past due but no worse in the last 2 years.,integer
+expense_ratio,"Monthly debt payments, alimony,living costs divided by monthy gross income",percentage
+income,Monthly income,real
+num_loans,Number of Open loans (installment like car loan or mortgage) and Lines of credit (e.g. credit cards),integer
+A90+_Counter,Number of times borrower has been 90 days or more past due.,integer
+num_home_loans,Number of mortgage and real estate loans including home equity lines of credit,integer
+A60-90_Counter,Number of times borrower has been 60-89 days past due but no worse in the last 2 years.,integer
+num_dependents,"Number of dependents in family excluding themselves (spouse, children etc.)",integer
+PD_2years,Person experienced 90 days past due delinquency or worse ,Boolean
